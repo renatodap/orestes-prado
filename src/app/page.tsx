@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { BriefingCard } from "@/components/briefing/BriefingCard";
+import { BriefingWithChat } from "@/components/briefing/BriefingWithChat";
 import { GenerateButton } from "@/components/briefing/GenerateButton";
 import { ClearBriefingsButton } from "@/components/briefing/ClearBriefingsButton";
 import { getLatestBriefing, isConfigured, hasGeneratedToday } from "@/lib/db/queries";
@@ -56,6 +56,7 @@ async function BriefingContent() {
         <GenerateButton canGenerate={canGenerate} isConfigured={configured} />
       </div>
 
+      {/* Latest Briefing with AI Chat */}
       {/* TEMP: Clear briefings button */}
       <div className="mb-6">
         <ClearBriefingsButton />
@@ -63,7 +64,7 @@ async function BriefingContent() {
 
       {/* Latest Briefing */}
       {latestBriefing ? (
-        <BriefingCard briefing={latestBriefing} />
+        <BriefingWithChat briefing={latestBriefing} />
       ) : (
         <div className="card-premium p-8 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
