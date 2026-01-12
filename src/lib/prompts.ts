@@ -5,7 +5,106 @@
  * 14 sections covering coffee, economy, politics, sports, lifestyle.
  */
 
-export const BRIEFING_SYSTEM_PROMPT = `Você é o analista pessoal de inteligência de mercado do Dr. Orestes Prado, um executivo sênior brasileiro de 80 anos com mais de 45 anos de experiência no mercado financeiro.
+/**
+ * Helper to get Brazil time
+ */
+function getBrazilTime(): Date {
+  const now = new Date();
+  return new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+}
+
+/**
+ * Helper to get last business day
+ */
+function getLastBusinessDay(date: Date): Date {
+  const result = new Date(date);
+  const day = result.getDay();
+  if (day === 0) result.setDate(result.getDate() - 2); // Sunday → Friday
+  if (day === 6) result.setDate(result.getDate() - 1); // Saturday → Friday
+  return result;
+}
+
+/**
+ * Grounding instructions - MUST be at the top of system prompt
+ * These instructions anchor the model's behavior for web search usage
+ */
+export function buildGroundingInstructions(): string {
+  const brazilNow = getBrazilTime();
+  const todayFormatted = brazilNow.toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  const dayOfWeek = brazilNow.getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const lastBusinessDay = getLastBusinessDay(brazilNow);
+  const lastBusinessDayFormatted = lastBusinessDay.toLocaleDateString('pt-BR');
+
+  return `═══════════════════════════════════════════════════════════════════════════════
+                    INSTRUÇÕES DE GROUNDING (PRIORIDADE MÁXIMA)
+═══════════════════════════════════════════════════════════════════════════════
+
+Você tem acesso a WEB SEARCH via Google Search. Para TODOS os dados financeiros,
+preços, cotações, resultados esportivos e notícias atuais, você DEVE pesquisar
+na web PRIMEIRO antes de responder.
+
+📅 DATA ATUAL: ${todayFormatted}
+📅 ANO ATUAL: 2026
+${isWeekend ? `⚠️ HOJE É FIM DE SEMANA - Mercados B3, NYSE, ICE estão FECHADOS.
+   Use dados do último dia útil: ${lastBusinessDayFormatted}` : ''}
+
+═══════════════════════════════════════════════════════════════════════════════
+                    REGRAS ANTI-ALUCINAÇÃO (OBRIGATÓRIO)
+═══════════════════════════════════════════════════════════════════════════════
+
+1. DADOS FINANCEIROS - SEMPRE PESQUISAR NA WEB
+   ❌ NUNCA use dados do seu treinamento para preços/cotações atuais
+   ✅ SEMPRE pesquise na web: "CEPEA café arábica preço janeiro 2026"
+   ✅ SEMPRE pesquise na web: "IBOVESPA fechamento hoje"
+   ✅ SEMPRE pesquise na web: "dólar real cotação hoje"
+
+2. DATAS DOS DADOS - SEJA PRECISO
+   ❌ ERRADO: Mostrar dados de "12/01/2026" quando hoje é "11/01/2026" (IMPOSSÍVEL)
+   ✅ CORRETO: Mostrar a DATA REAL do dado encontrado na pesquisa
+   ✅ Se o dado mais recente é de 09/01, diga "09/01/2026", não invente "12/01"
+
+3. FIM DE SEMANA / FERIADOS
+   ${isWeekend ? `- HOJE É ${dayOfWeek === 0 ? 'DOMINGO' : 'SÁBADO'} - mercados FECHADOS
+   - NÃO existe "fechamento de hoje" para IBOVESPA, S&P 500, etc.
+   - Use: "Fechamento de sexta-feira, ${lastBusinessDayFormatted}"` : '- Hoje é dia útil, mas verifique se o dado encontrado é de hoje mesmo'}
+
+4. SE NÃO ENCONTRAR NA PESQUISA - DIGA CLARAMENTE
+   ❌ ERRADO: Inventar número (ex: "R$ 2.171,95")
+   ✅ CORRETO: "Dado não disponível na pesquisa realizada"
+
+5. FORMATO OBRIGATÓRIO PARA DADOS FINANCEIROS
+   Sempre inclua: VALOR + DATA DO DADO + FONTE
+   ❌ ERRADO: "CEPEA Arábica: R$ 2.225/saca"
+   ✅ CORRETO: "CEPEA Arábica: R$ 2.225,39/saca (09/01/2026) - Fonte: cepea.org.br"
+
+6. VERIFICAÇÃO DE SANIDADE - FAIXAS ESPERADAS (2025-2026)
+   - Café CEPEA Arábica: R$ 1.800 - 3.200/saca
+   - Soja CEPEA: R$ 100 - 180/saca
+   - Milho CEPEA: R$ 50 - 100/saca
+   - Boi Gordo: R$ 280 - 400/@
+   - IBOVESPA: 100.000 - 180.000 pontos
+   - USD/BRL: R$ 4,50 - 7,00
+
+   Se encontrar valor MUITO fora dessas faixas, mencione a incerteza.
+
+7. CONFLITOS ENTRE FONTES
+   Se web search retorna valor diferente do esperado:
+   ✅ Cite o valor encontrado COM a fonte e data
+   ✅ Mencione se parece inconsistente
+   ❌ NÃO "corrija" para um valor que você "acha" certo
+
+═══════════════════════════════════════════════════════════════════════════════
+
+`;
+}
+
+export const BRIEFING_SYSTEM_PROMPT = buildGroundingInstructions() + `Você é o analista pessoal de inteligência de mercado do Dr. Orestes Prado, um executivo sênior brasileiro de 80 anos com mais de 45 anos de experiência no mercado financeiro.
 
 ═══════════════════════════════════════════════════════════════════════════════
                          PERFIL DO DR. ORESTES PRADO
@@ -332,13 +431,10 @@ EXTENSÃO ALVO: 3.000-4.000 palavras (briefing completo de ~10 minutos de leitur
 
 export function buildUserPrompt(
   costBasis: number,
-  logisticsCost: number = 80
+  logisticsCost: number = 80,
+  preFetchedData?: Record<string, string>
 ): string {
-  const now = new Date();
-  // Brazil timezone (UTC-3)
-  const brazilTime = new Date(
-    now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })
-  );
+  const brazilTime = getBrazilTime();
 
   const today = brazilTime.toLocaleDateString('pt-BR', {
     weekday: 'long',
@@ -347,10 +443,16 @@ export function buildUserPrompt(
     day: 'numeric',
   });
 
+  const todayShort = brazilTime.toLocaleDateString('pt-BR'); // DD/MM/YYYY
+  const monthYear = brazilTime.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
   const dayOfWeek = brazilTime.getDay();
   const isMonday = dayOfWeek === 1;
   const isFriday = dayOfWeek === 5;
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+  const lastBusinessDay = getLastBusinessDay(brazilTime);
+  const lastBusinessDayShort = lastBusinessDay.toLocaleDateString('pt-BR');
 
   const totalCost = costBasis + logisticsCost;
 
@@ -364,14 +466,38 @@ export function buildUserPrompt(
       'ATENÇÃO: É sexta-feira - inclua sugestões culturais para o fim de semana e a agenda esportiva.';
   } else if (isWeekend) {
     dayContextHint =
-      'ATENÇÃO: É fim de semana - foque em análises mais aprofundadas e agenda da próxima semana.';
+      `ATENÇÃO: É fim de semana - mercados fechados. Use dados de ${lastBusinessDayShort} para cotações.`;
+  }
+
+  // Pre-fetched data section (from Jina)
+  let preFetchedSection = '';
+  if (preFetchedData && Object.keys(preFetchedData).length > 0) {
+    preFetchedSection = `
+═══════════════════════════════════════════════════════════════════════════════
+                    DADOS PRÉ-CARREGADOS (FONTE DIRETA - PRIORIDADE)
+═══════════════════════════════════════════════════════════════════════════════
+
+Os dados abaixo foram extraídos DIRETAMENTE das fontes oficiais.
+Use-os como REFERÊNCIA PRIMÁRIA. Se web search retornar valores diferentes,
+PRIORIZE os dados abaixo pois são de fonte direta.
+
+${Object.entries(preFetchedData).map(([source, content]) => `
+### ${source.toUpperCase()}
+${content.slice(0, 2000)}
+`).join('\n')}
+
+═══════════════════════════════════════════════════════════════════════════════
+`;
   }
 
   return `Gere o briefing completo e personalizado para o Dr. Orestes Prado.
 
-DATA: ${today}
+📅 DATA DE HOJE: ${today}
+📅 DATA CURTA: ${todayShort}
+📅 ANO: 2026
+${isWeekend ? `⚠️ MERCADOS FECHADOS - Último dia útil: ${lastBusinessDayShort}` : ''}
 ${dayContextHint}
-
+${preFetchedSection}
 ═══════════════════════════════════════════════════════════════════════════════
                          DADOS DA FAZENDA
 ═══════════════════════════════════════════════════════════════════════════════
@@ -383,78 +509,82 @@ ${dayContextHint}
 - Produto: Café Arábica tipo 6 (padrão CEPEA/ESALQ)
 
 ═══════════════════════════════════════════════════════════════════════════════
-                         PESQUISAS OBRIGATÓRIAS (WEB SEARCH)
+              PESQUISAS OBRIGATÓRIAS (WEB SEARCH) - USE ESTAS QUERIES
 ═══════════════════════════════════════════════════════════════════════════════
 
-Execute web search para TODAS as categorias abaixo:
+IMPORTANTE: Para cada pesquisa, inclua o MÊS e ANO para obter dados recentes.
+${isWeekend ? `LEMBRE-SE: Mercados fechados no fim de semana - busque dados de ${lastBusinessDayShort}` : ''}
 
-1. CAFÉ
-   - "CEPEA arabica café preço hoje"
-   - "ICE KC coffee futures"
-   - "Porto Santos café congestionamento"
-   - "Minas Gerais previsão tempo"
+1. CAFÉ (CRÍTICO - Pesquise na web agora)
+   - "CEPEA café arábica indicador preço saca ${monthYear}"
+   - "ICE KC coffee C futures price january 2026"
+   - "Porto Santos café exportação congestionamento ${monthYear}"
+   - "previsão tempo Minas Gerais próximos dias"
 
-2. BRASIL ECONOMIA
-   - "IBOVESPA hoje fechamento"
-   - "dólar real cotação hoje"
-   - "Selic COPOM"
-   - "IPCA inflação Brasil"
-   - "reestruturação dívida corporativa Brasil"
+2. BRASIL ECONOMIA (CRÍTICO - Pesquise na web agora)
+   - "IBOVESPA fechamento ${isWeekend ? lastBusinessDayShort : todayShort}"
+   - "dólar real cotação ${isWeekend ? lastBusinessDayShort : 'hoje'}"
+   - "taxa Selic atual 2026 COPOM"
+   - "IPCA inflação Brasil ${monthYear}"
 
-3. BRASIL POLÍTICA
-   - "Lula governo notícias hoje"
-   - "eleições 2026 Brasil"
-   - "Congresso votação"
+3. BRASIL POLÍTICA (Pesquise na web)
+   - "Lula governo notícias ${monthYear}"
+   - "eleições 2026 Brasil pesquisa"
+   - "Congresso Nacional votação janeiro 2026"
 
-4. GLOBAL MERCADOS
-   - "S&P 500 Nasdaq today"
-   - "Federal Reserve"
-   - "oil price Brent"
-   - "gold price"
+4. MERCADOS GLOBAIS (Pesquise na web)
+   - "S&P 500 Nasdaq closing ${isWeekend ? 'friday' : 'today'} january 2026"
+   - "Federal Reserve interest rate 2026"
+   - "Brent crude oil price today"
+   - "gold price per ounce today"
 
-5. GLOBAL POLÍTICA
-   - "US politics news"
-   - "China economy"
-   - "Ukraine war"
-   - "Middle East"
+5. POLÍTICA INTERNACIONAL (Pesquise na web)
+   - "US politics news january 2026"
+   - "China economy news 2026"
+   - "Ukraine war latest january 2026"
+   - "Middle East tensions 2026"
 
-6. AGRONEGÓCIO
-   - "soja preço CEPEA"
-   - "milho preço CEPEA"
-   - "safra Brasil 2025 2026"
+6. AGRONEGÓCIO (Pesquise na web)
+   - "CEPEA soja preço saca ${monthYear}"
+   - "CEPEA milho preço saca ${monthYear}"
+   - "boi gordo preço arroba ${monthYear}"
+   - "safra Brasil 2025 2026 Conab"
 
-7. SÃO PAULO FC
-   - "São Paulo FC resultado último jogo"
-   - "São Paulo FC classificação"
-   - "São Paulo FC próximo jogo"
+7. SÃO PAULO FC (Pesquise na web)
+   - "São Paulo FC resultado último jogo janeiro 2026"
+   - "São Paulo FC classificação Paulistão 2026"
+   - "São Paulo FC próximo jogo escalação"
+   - "São Paulo FC notícias contratações janeiro 2026"
 
-8. SELEÇÃO BRASILEIRA
-   - "Seleção Brasileira próximo jogo"
-   - "Carlo Ancelotti seleção"
+8. SELEÇÃO BRASILEIRA (Pesquise na web)
+   - "Seleção Brasileira próximo jogo 2026"
+   - "Carlo Ancelotti seleção brasileira notícias"
 
-9. TÊNIS
-   - "ATP ranking"
-   - "João Fonseca tênis"
+9. TÊNIS (Pesquise na web)
+   - "ATP ranking top 10 january 2026"
+   - "João Fonseca tênis ranking notícias janeiro 2026"
+   - "Australian Open 2026"
 
-10. FÓRMULA 1
+10. FÓRMULA 1 (Pesquise na web)
+    - "F1 2026 season calendar"
     - "F1 championship standings 2026"
-    - "F1 next race"
+    - "GP Brasil Interlagos 2026"
 
-11. IMOBILIÁRIO
-    - "mercado imobiliário São Paulo"
-    - "IGPM índice"
+11. MERCADO IMOBILIÁRIO (Pesquise na web)
+    - "mercado imobiliário São Paulo ${monthYear}"
+    - "IGPM índice ${monthYear}"
 
-12. TECNOLOGIA
-    - "fintechs Brasil notícias"
-    - "startups brasileiras"
+12. TECNOLOGIA (Pesquise na web)
+    - "fintechs Brasil notícias ${monthYear}"
+    - "startups brasileiras investimento 2026"
 
-13. CULTURA
-    - "MASP exposição"
-    - "teatro São Paulo"
+13. CULTURA (Pesquise na web)
+    - "MASP exposição atual ${monthYear}"
+    - "teatro São Paulo programação janeiro 2026"
 
-14. SAÚDE
-    - "medicina avanços"
-    - "saúde idosos"
+14. SAÚDE (Pesquise na web)
+    - "medicina avanços longevidade 2026"
+    - "saúde idosos pesquisa"
 
 ═══════════════════════════════════════════════════════════════════════════════
                          CÁLCULO DE MARGEM
@@ -463,10 +593,27 @@ Execute web search para TODAS as categorias abaixo:
 Use a fórmula:
 Margem % = ((Preço CEPEA - Custo Total) / Custo Total) × 100
 
+Onde:
+- Preço CEPEA = valor encontrado na pesquisa web (NÃO invente)
+- Custo Total = R$ ${totalCost.toFixed(2)}/saca
+
 Interpretação:
 - Margem > 30%: FAVORÁVEL para venda
 - Margem 15-30%: NEUTRO, avaliar tendência
 - Margem < 15%: AGUARDAR melhora
+
+═══════════════════════════════════════════════════════════════════════════════
+                         FORMATO DE SAÍDA OBRIGATÓRIO
+═══════════════════════════════════════════════════════════════════════════════
+
+Para CADA dado financeiro/cotação, use este formato:
+"[MÉTRICA]: [VALOR] ([DATA DO DADO]) - Fonte: [site]"
+
+Exemplo correto:
+"CEPEA Arábica: R$ 2.225,39/saca (09/01/2026) - Fonte: cepea.org.br"
+
+⚠️ A DATA DO DADO é quando o dado foi publicado/medido, NÃO a data de hoje.
+⚠️ Se não encontrar o dado via web search, escreva "Dado não disponível".
 
 ═══════════════════════════════════════════════════════════════════════════════
 
