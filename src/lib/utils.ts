@@ -35,8 +35,7 @@ export function formatDateBR(date: Date | string): string {
 // Get today's date string (YYYY-MM-DD) in Brazil timezone
 export function getTodayBrazil(): string {
   const now = new Date();
-  const brazilOffset = -3 * 60;
-  const localOffset = now.getTimezoneOffset();
-  const brazilTime = new Date(now.getTime() + (localOffset + brazilOffset) * 60000);
+  // Brazil is UTC-3, so subtract 3 hours from UTC
+  const brazilTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
   return brazilTime.toISOString().split('T')[0];
 }

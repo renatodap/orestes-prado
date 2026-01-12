@@ -11,21 +11,28 @@ export async function isConfigured(): Promise<boolean> {
 // Check if generated today (using Brazil timezone)
 export async function hasGeneratedToday(): Promise<boolean> {
   try {
-    // Get today's date in Brazil timezone (UTC-3)
+    // Get today's date string in Brazil timezone (YYYY-MM-DD)
+    // Brazil is UTC-3, so subtract 3 hours from UTC
     const now = new Date();
-    const brazilOffset = -3 * 60; // -3 hours in minutes
-    const localOffset = now.getTimezoneOffset();
-    const brazilTime = new Date(now.getTime() + (localOffset + brazilOffset) * 60000);
-    const todayStart = new Date(brazilTime.toISOString().split('T')[0] + 'T00:00:00.000Z');
-    const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    const brazilTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+    const todayBrazil = brazilTime.toISOString().split('T')[0];
 
-    const result = await db
+    // Check recent briefings and compare date strings
+    const recentBriefings = await db
       .select()
       .from(briefings)
-      .where(sql`${briefings.reportDate} >= ${todayStart.toISOString()} AND ${briefings.reportDate} < ${tomorrowStart.toISOString()}`)
-      .limit(1);
+      .orderBy(desc(briefings.reportDate))
+      .limit(5);
 
-    return result.length > 0;
+    for (const briefing of recentBriefings) {
+      const briefingDate = new Date(briefing.reportDate);
+      const briefingDateStr = briefingDate.toISOString().split('T')[0];
+      if (briefingDateStr === todayBrazil) {
+        return true;
+      }
+    }
+
+    return false;
   } catch (error) {
     console.error('Error checking if generated today:', error);
     // On error, allow generation (fail open)

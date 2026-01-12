@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Briefing } from "@/lib/db/schema";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface BriefingCardProps {
   briefing: Briefing;
@@ -35,6 +36,7 @@ export function BriefingCard({ briefing }: BriefingCardProps) {
       <CardContent className="pt-6">
         <div className="prose prose-lg max-w-none prose-headings:text-primary prose-headings:font-bold prose-h2:text-xl prose-h2:mt-6 prose-h2:mb-4 prose-table:text-base prose-th:bg-muted prose-th:p-3 prose-td:p-3 prose-td:border prose-strong:text-primary">
           <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
             components={{
               h2: ({ children }) => (
                 <h2 className="text-xl font-bold text-primary mt-6 mb-4 pb-2 border-b border-border">
