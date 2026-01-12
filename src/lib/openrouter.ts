@@ -6,8 +6,8 @@ const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY!,
 });
 
-// Model: Gemini 3 Pro with web search (1M context, Google Search grounding)
-const MODEL_ID = 'google/gemini-3-pro-preview';
+// Model: GPT-5.2 with native web search (400K context, OpenAI native search)
+const MODEL_ID = 'openai/gpt-5.2';
 
 export interface GenerateBriefingOptions {
   systemPrompt: string;
@@ -24,14 +24,14 @@ export async function generateBriefingStream(
     model: openrouter(MODEL_ID),
     system: systemPrompt,
     prompt: userPrompt,
-    temperature: 1.0, // Google recommends 1.0 for optimal grounding
+    temperature: 0.7,
     providerOptions: {
       openrouter: {
         plugins: [
           {
             id: 'web',
             max_results: 10,
-            engine: 'native', // Use Google's native search for Gemini
+            engine: 'native', // OpenAI supports native web search
           },
         ],
       },
@@ -50,14 +50,14 @@ export async function generateBriefing(
     model: openrouter(MODEL_ID),
     system: systemPrompt,
     prompt: userPrompt,
-    temperature: 1.0, // Google recommends 1.0 for optimal grounding
+    temperature: 0.7,
     providerOptions: {
       openrouter: {
         plugins: [
           {
             id: 'web',
             max_results: 10,
-            engine: 'native', // Use Google's native search for Gemini
+            engine: 'native', // OpenAI supports native web search
           },
         ],
       },
