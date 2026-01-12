@@ -139,10 +139,13 @@ export function MobileSectionNav({ sections }: MobileSectionNavProps) {
           "flex items-center gap-2 px-3 py-2",
           "active:scale-95 touch-manipulation",
           isVisible
-            ? "bottom-20 opacity-100 translate-y-0"
-            : "bottom-20 opacity-0 translate-y-4 pointer-events-none"
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-4 pointer-events-none"
         )}
-        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+        style={{
+          /* Position above BottomNav: nav height (56px) + safe area + margin (12px) */
+          bottom: "calc(56px + env(safe-area-inset-bottom, 0px) + 12px)",
+        }}
         aria-label="Navigate to section"
       >
         {currentSection && (
