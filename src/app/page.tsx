@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { BriefingCard } from "@/components/briefing/BriefingCard";
 import { GenerateButton } from "@/components/briefing/GenerateButton";
-import { AdminResetButton } from "@/components/briefing/AdminResetButton";
 import { getLatestBriefing, isConfigured, hasGeneratedToday } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
@@ -54,11 +53,6 @@ async function BriefingContent() {
       {/* Generate Button - only shows if can generate */}
       <div className="mb-6">
         <GenerateButton canGenerate={canGenerate} isConfigured={configured} />
-      </div>
-
-      {/* TEMPORARY: Admin Reset Button - DELETE THIS AFTER USE */}
-      <div className="mb-6">
-        <AdminResetButton />
       </div>
 
       {/* Latest Briefing */}
