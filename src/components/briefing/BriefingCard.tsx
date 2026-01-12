@@ -4,9 +4,11 @@ import type { Briefing } from "@/lib/db/schema";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useMemo } from "react";
+import { cn } from "@/lib/utils";
 
 interface BriefingCardProps {
   briefing: Briefing;
+  onAskAboutSection?: (sectionTitle: string) => void;
 }
 
 /**
@@ -102,7 +104,52 @@ function getSectionConfig(text: string): { icon: string; bgColor: string; textCo
   return null;
 }
 
-export function BriefingCard({ briefing }: BriefingCardProps) {
+/**
+ * Small "Ask AI" button component for section headers
+ */
+function AskAIButton({
+  onClick,
+  className
+}: {
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick();
+      }}
+      className={cn(
+        "w-8 h-8 rounded-lg flex items-center justify-center",
+        "bg-slate-100 hover:bg-slate-200 active:bg-slate-300",
+        "text-slate-500 hover:text-slate-700",
+        "transition-all duration-150 active:scale-95",
+        "flex-shrink-0 no-print",
+        className
+      )}
+      aria-label="Perguntar à IA sobre esta seção"
+      title="Perguntar à IA"
+    >
+      <svg
+        className="w-4 h-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    </button>
+  );
+}
+
+export function BriefingCard({ briefing, onAskAboutSection }: BriefingCardProps) {
   const reportDate = new Date(briefing.reportDate);
   const formattedDate = reportDate.toLocaleDateString("pt-BR", {
     timeZone: "America/Sao_Paulo",
@@ -152,12 +199,13 @@ export function BriefingCard({ briefing }: BriefingCardProps) {
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              // Section headers with dynamic icons
+              // Section headers with dynamic icons and Ask AI button
               h2: ({ children }) => {
                 const text = String(children).toUpperCase();
+                const originalText = String(children);
                 const config = getSectionConfig(text);
 
-                // Special case: FONTES section (smaller styling)
+                // Special case: FONTES section (smaller styling, no AI button)
                 if (text.includes("FONTES")) {
                   return (
                     <h2 className="text-xs sm:text-sm font-bold text-slate-400 mt-8 sm:mt-10 mb-2 sm:mb-3 uppercase tracking-wider">
@@ -170,13 +218,16 @@ export function BriefingCard({ briefing }: BriefingCardProps) {
                 // Special case: ABERTURA (opening - no icon header, just clean text)
                 if (text.includes("ABERTURA")) {
                   return (
-                    <h2 className="text-lg sm:text-xl font-bold text-slate-900 mt-0 mb-3 pb-3 border-b border-slate-100">
-                      {children}
+                    <h2 className="flex items-center justify-between text-lg sm:text-xl font-bold text-slate-900 mt-0 mb-3 pb-3 border-b border-slate-100">
+                      <span>{children}</span>
+                      {onAskAboutSection && (
+                        <AskAIButton onClick={() => onAskAboutSection(originalText)} />
+                      )}
                     </h2>
                   );
                 }
 
-                // Default section with icon
+                // Default section with icon and Ask AI button
                 if (config) {
                   return (
                     <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-900 mt-8 sm:mt-10 mb-3 pb-2 sm:pb-3 border-b border-slate-100">
@@ -185,15 +236,21 @@ export function BriefingCard({ briefing }: BriefingCardProps) {
                       >
                         {config.icon}
                       </span>
-                      <span className="truncate">{children}</span>
+                      <span className="truncate flex-1">{children}</span>
+                      {onAskAboutSection && (
+                        <AskAIButton onClick={() => onAskAboutSection(originalText)} />
+                      )}
                     </h2>
                   );
                 }
 
                 // Fallback for unknown sections
                 return (
-                  <h2 className="text-lg sm:text-xl font-bold text-slate-900 mt-8 sm:mt-10 mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-slate-100">
-                    {children}
+                  <h2 className="flex items-center justify-between text-lg sm:text-xl font-bold text-slate-900 mt-8 sm:mt-10 mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-slate-100">
+                    <span>{children}</span>
+                    {onAskAboutSection && (
+                      <AskAIButton onClick={() => onAskAboutSection(originalText)} />
+                    )}
                   </h2>
                 );
               },
