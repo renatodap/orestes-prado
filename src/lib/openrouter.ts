@@ -24,12 +24,14 @@ export async function generateBriefingStream(
     model: openrouter(MODEL_ID),
     system: systemPrompt,
     prompt: userPrompt,
+    temperature: 1.0, // Google recommends 1.0 for optimal grounding
     providerOptions: {
       openrouter: {
         plugins: [
           {
             id: 'web',
             max_results: 10,
+            engine: 'native', // Use Google's native search for Gemini
           },
         ],
       },
@@ -48,12 +50,14 @@ export async function generateBriefing(
     model: openrouter(MODEL_ID),
     system: systemPrompt,
     prompt: userPrompt,
+    temperature: 1.0, // Google recommends 1.0 for optimal grounding
     providerOptions: {
       openrouter: {
         plugins: [
           {
             id: 'web',
             max_results: 10,
+            engine: 'native', // Use Google's native search for Gemini
           },
         ],
       },
