@@ -38,16 +38,25 @@
 
 /* Base styles for accessibility - 70+ users */
 html {
-  font-size: 18px;
+  font-size: 17px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+@media (min-width: 640px) {
+  html {
+    font-size: 18px;
+  }
 }
 
 body {
   font-family: var(--font-sans);
-  line-height: 1.65;
+  line-height: 1.6;
   letter-spacing: 0.01em;
   padding-bottom: env(safe-area-inset-bottom, 80px);
+  overscroll-behavior-y: contain;
 }
 
 /* Focus states for accessibility */
@@ -83,7 +92,20 @@ body {
 @layer components {
   /* Safe area padding for bottom nav */
   .pb-safe {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Mobile-optimized container */
+  .mobile-container {
+    @apply px-4 py-4;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  @media (min-width: 640px) {
+    .mobile-container {
+      @apply px-6 py-6;
+    }
   }
 
   /* Accessible button - 52px minimum touch target */
@@ -128,8 +150,14 @@ body {
 
   /* Greeting card - hero section */
   .greeting-card {
-    @apply bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-6;
+    @apply bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-5;
     @apply shadow-xl shadow-slate-900/30;
+  }
+
+  @media (min-width: 640px) {
+    .greeting-card {
+      @apply p-6;
+    }
   }
 
   /* Margin indicator */
@@ -208,21 +236,39 @@ body {
   }
 }
 
-/* Prose styling for markdown content - premium */
+/* Prose styling for markdown content - mobile optimized */
 .prose {
   @apply text-foreground;
 }
 
 .prose h2 {
-  @apply text-xl font-bold text-slate-900 mt-8 mb-4 pb-3 border-b border-slate-100;
+  @apply text-lg font-bold text-slate-900 mt-6 mb-3 pb-2 border-b border-slate-100;
+}
+
+@media (min-width: 640px) {
+  .prose h2 {
+    @apply text-xl mt-8 mb-4 pb-3;
+  }
 }
 
 .prose h3 {
-  @apply text-lg font-semibold text-slate-800 mt-6 mb-3;
+  @apply text-base font-semibold text-slate-800 mt-5 mb-2;
+}
+
+@media (min-width: 640px) {
+  .prose h3 {
+    @apply text-lg mt-6 mb-3;
+  }
 }
 
 .prose p {
-  @apply text-lg leading-relaxed mb-4 text-slate-600;
+  @apply text-base leading-relaxed mb-3 text-slate-600;
+}
+
+@media (min-width: 640px) {
+  .prose p {
+    @apply text-lg mb-4;
+  }
 }
 
 .prose strong {

@@ -2,15 +2,14 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { BriefingCard } from "@/components/briefing/BriefingCard";
 import { GenerateButton } from "@/components/briefing/GenerateButton";
-import { getLatestBriefing, isConfigured, hasGeneratedToday, getSettings } from "@/lib/db/queries";
+import { getLatestBriefing, isConfigured, hasGeneratedToday } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 function getTodayBrazil(): string {
-  const now = new Date();
-  const brazilTime = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-  return brazilTime.toLocaleDateString('pt-BR', {
+  return new Date().toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -18,11 +17,10 @@ function getTodayBrazil(): string {
 }
 
 async function BriefingContent() {
-  const [configured, canGenerate, latestBriefing, settings] = await Promise.all([
+  const [configured, canGenerate, latestBriefing] = await Promise.all([
     isConfigured(),
     hasGeneratedToday().then((v) => !v),
     getLatestBriefing(),
-    getSettings(),
   ]);
 
   if (!configured) {
@@ -47,23 +45,8 @@ async function BriefingContent() {
           </p>
         ) : (
           <p className="text-slate-300 text-lg">
-            Pronto para gerar sua análise de mercado?
+            Pronto para gerar sua análise?
           </p>
-        )}
-
-        {/* Quick Stats */}
-        {settings?.costBasis && (
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span>Guaxupé, MG</span>
-              <span className="text-white/30 mx-2">•</span>
-              <span>Custo: R$ {settings.costBasis.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/saca</span>
-            </div>
-          </div>
         )}
       </div>
 
@@ -118,20 +101,20 @@ function LoadingSkeleton() {
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-background">
-      {/* Clean minimal header */}
-      <header className="bg-slate-900 text-white py-4 px-4">
+      {/* Minimal header */}
+      <header className="bg-slate-900 text-white py-3 px-4 sticky top-0 z-40">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-              <span className="text-lg font-bold">O</span>
+            <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+              <span className="text-base font-bold">O</span>
             </div>
-            <span className="font-semibold tracking-tight">ORESTES PRADO</span>
+            <span className="text-sm font-semibold tracking-tight">ORESTES PRADO</span>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-2xl mx-auto mobile-container">
         <Suspense fallback={<LoadingSkeleton />}>
           <BriefingContent />
         </Suspense>

@@ -9,22 +9,22 @@ export default async function HistoryPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-slate-900 text-white py-4 px-4">
+      <header className="bg-slate-900 text-white py-3 px-4 sticky top-0 z-40">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-              <span className="text-lg font-bold">O</span>
+            <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+              <span className="text-base font-bold">O</span>
             </div>
-            <span className="font-semibold tracking-tight">ORESTES PRADO</span>
+            <span className="text-sm font-semibold tracking-tight">ORESTES PRADO</span>
           </div>
         </div>
       </header>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">Histórico</h1>
-          <p className="text-slate-500">Seus briefings anteriores</p>
+      <div className="max-w-2xl mx-auto mobile-container">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Histórico</h1>
+          <p className="text-sm sm:text-base text-slate-500">Seus briefings anteriores</p>
         </div>
 
         {briefings.length === 0 ? (
@@ -55,6 +55,7 @@ export default async function HistoryPage() {
             {briefings.map((briefing) => {
               const reportDate = new Date(briefing.reportDate);
               const formattedDate = reportDate.toLocaleDateString("pt-BR", {
+                timeZone: 'America/Sao_Paulo',
                 weekday: "long",
                 day: "numeric",
                 month: "long",
@@ -74,21 +75,21 @@ export default async function HistoryPage() {
 
               return (
                 <Link key={briefing.id} href={`/history/${briefing.id}`}>
-                  <div className="card-premium p-4 hover:shadow-md cursor-pointer group">
-                    <div className="flex items-start justify-between gap-4">
+                  <div className="card-premium p-3 sm:p-4 active:bg-slate-50 cursor-pointer group">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900 capitalize group-hover:text-primary transition-colors">
+                        <p className="font-semibold text-sm sm:text-base text-slate-900 capitalize">
                           {formattedDate}
                         </p>
-                        <p className="text-sm text-slate-400 mb-2">{year}</p>
+                        <p className="text-xs sm:text-sm text-slate-400 mb-1">{year}</p>
                         {preview && (
-                          <p className="text-slate-500 text-sm line-clamp-2">
+                          <p className="text-slate-500 text-xs sm:text-sm line-clamp-2">
                             {preview}...
                           </p>
                         )}
                       </div>
-                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                        <svg className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
