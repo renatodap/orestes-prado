@@ -25,6 +25,7 @@ export async function generateBriefingStream(
     system: systemPrompt,
     prompt: userPrompt,
     temperature: 0.7,
+    maxOutputTokens: 16384, // Limit output to ~12K words max, reduces credit reservation
     providerOptions: {
       openrouter: {
         plugins: [
@@ -51,6 +52,7 @@ export async function generateBriefing(
     system: systemPrompt,
     prompt: userPrompt,
     temperature: 0.7,
+    maxOutputTokens: 16384, // Limit output to ~12K words max, reduces credit reservation
     providerOptions: {
       openrouter: {
         plugins: [
