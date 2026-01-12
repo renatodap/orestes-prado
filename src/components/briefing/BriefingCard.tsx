@@ -3,8 +3,10 @@
 import type { Briefing } from "@/lib/db/schema";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { MobileSectionNav, type Section } from "./MobileSectionNav";
 
 interface BriefingCardProps {
   briefing: Briefing;
@@ -150,6 +152,48 @@ function AskAIButton({
 }
 
 export function BriefingCard({ briefing, onAskAboutSection }: BriefingCardProps) {
+ * Generate a URL-friendly ID from section title
+ */
+function generateSectionId(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
+ * Extract sections from markdown content
+ */
+function extractSections(content: string): Section[] {
+  const sections: Section[] = [];
+  const h2Regex = /^##\s+(.+)$/gm;
+  let match;
+
+  while ((match = h2Regex.exec(content)) !== null) {
+    const title = match[1].trim();
+    const upperTitle = title.toUpperCase();
+
+    // Skip ABERTURA section as it's the intro
+    if (upperTitle.includes("ABERTURA")) continue;
+
+    const config = getSectionConfig(upperTitle);
+    if (config) {
+      sections.push({
+        id: `section-${generateSectionId(title)}`,
+        title: title,
+        icon: config.icon,
+        bgColor: config.bgColor,
+        textColor: config.textColor,
+      });
+    }
+  }
+
+  return sections;
+}
+
+export function BriefingCard({ briefing }: BriefingCardProps) {
   const reportDate = new Date(briefing.reportDate);
   const formattedDate = reportDate.toLocaleDateString("pt-BR", {
     timeZone: "America/Sao_Paulo",
@@ -161,7 +205,13 @@ export function BriefingCard({ briefing, onAskAboutSection }: BriefingCardProps)
   // Memoize greeting to avoid unnecessary recalculations
   const greeting = useMemo(() => getGreeting(), []);
 
+  // Extract sections for navigation
+  const sections = useMemo(() => extractSections(briefing.content), [briefing.content]);
+
   return (
+    <>
+      {/* Mobile Section Navigation */}
+      <MobileSectionNav sections={sections} />
     <article className="card-premium overflow-hidden">
       {/* Dynamic Greeting Header */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-4 py-4 sm:px-6 sm:py-5">
@@ -197,7 +247,7 @@ export function BriefingCard({ briefing, onAskAboutSection }: BriefingCardProps)
       <div className="p-4 sm:p-6">
         <div className="prose max-w-none">
           <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm, remarkBreaks]}
             components={{
               // Section headers with dynamic icons and Ask AI button
               h2: ({ children }) => {
@@ -207,8 +257,20 @@ export function BriefingCard({ briefing, onAskAboutSection }: BriefingCardProps)
 
                 // Special case: FONTES section (smaller styling, no AI button)
                 if (text.includes("FONTES")) {
+              // Section headers with dynamic icons and scroll IDs
+              h2: ({ children }) => {
+                const text = String(children);
+                const upperText = text.toUpperCase();
+                const config = getSectionConfig(upperText);
+                const sectionId = `section-${generateSectionId(text)}`;
+
+                // Special case: FONTES section (smaller styling)
+                if (upperText.includes("FONTES")) {
                   return (
-                    <h2 className="text-xs sm:text-sm font-bold text-slate-400 mt-8 sm:mt-10 mb-2 sm:mb-3 uppercase tracking-wider">
+                    <h2
+                      id={sectionId}
+                      className="text-xs sm:text-sm font-bold text-slate-400 mt-8 sm:mt-10 mb-2 sm:mb-3 uppercase tracking-wider scroll-mt-20"
+                    >
                       {config?.icon && <span className="mr-2">{config.icon}</span>}
                       {children}
                     </h2>
@@ -216,7 +278,7 @@ export function BriefingCard({ briefing, onAskAboutSection }: BriefingCardProps)
                 }
 
                 // Special case: ABERTURA (opening - no icon header, just clean text)
-                if (text.includes("ABERTURA")) {
+                if (upperText.includes("ABERTURA")) {
                   return (
                     <h2 className="flex items-center justify-between text-lg sm:text-xl font-bold text-slate-900 mt-0 mb-3 pb-3 border-b border-slate-100">
                       <span>{children}</span>
@@ -230,7 +292,10 @@ export function BriefingCard({ briefing, onAskAboutSection }: BriefingCardProps)
                 // Default section with icon and Ask AI button
                 if (config) {
                   return (
-                    <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-900 mt-8 sm:mt-10 mb-3 pb-2 sm:pb-3 border-b border-slate-100">
+                    <h2
+                      id={sectionId}
+                      className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-900 mt-8 sm:mt-10 mb-3 pb-2 sm:pb-3 border-b border-slate-100 scroll-mt-20"
+                    >
                       <span
                         className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${config.bgColor} flex items-center justify-center flex-shrink-0 text-lg`}
                       >
@@ -251,6 +316,11 @@ export function BriefingCard({ briefing, onAskAboutSection }: BriefingCardProps)
                     {onAskAboutSection && (
                       <AskAIButton onClick={() => onAskAboutSection(originalText)} />
                     )}
+                  <h2
+                    id={sectionId}
+                    className="text-lg sm:text-xl font-bold text-slate-900 mt-8 sm:mt-10 mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-slate-100 scroll-mt-20"
+                  >
+                    {children}
                   </h2>
                 );
               },
@@ -473,5 +543,6 @@ export function BriefingCard({ briefing, onAskAboutSection }: BriefingCardProps)
         </div>
       </div>
     </article>
+    </>
   );
 }

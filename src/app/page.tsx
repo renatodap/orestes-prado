@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { BriefingWithChat } from "@/components/briefing/BriefingWithChat";
 import { GenerateButton } from "@/components/briefing/GenerateButton";
+import { ClearBriefingsButton } from "@/components/briefing/ClearBriefingsButton";
 import { getLatestBriefing, isConfigured, hasGeneratedToday } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
@@ -56,6 +57,12 @@ async function BriefingContent() {
       </div>
 
       {/* Latest Briefing with AI Chat */}
+      {/* TEMP: Clear briefings button */}
+      <div className="mb-6">
+        <ClearBriefingsButton />
+      </div>
+
+      {/* Latest Briefing */}
       {latestBriefing ? (
         <BriefingWithChat briefing={latestBriefing} />
       ) : (
