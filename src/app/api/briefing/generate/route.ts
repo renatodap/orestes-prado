@@ -3,8 +3,9 @@ import { generateBriefing } from '@/lib/openrouter';
 import { BRIEFING_SYSTEM_PROMPT, buildUserPrompt } from '@/lib/prompts';
 import { hasGeneratedToday, getSettings, saveBriefing } from '@/lib/db/queries';
 import { getTodayBrazil } from '@/lib/utils';
+import { orchestrateBriefing } from '@/lib/agents/orchestrator';
 
-export const maxDuration = 60; // Allow up to 60 seconds
+export const maxDuration = 120; // Allow up to 120 seconds for comprehensive briefing
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,9 +27,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate briefing
-    const userPrompt = buildUserPrompt(settings.costBasis, settings.logisticsCost || 80);
-    const result = await generateBriefing(BRIEFING_SYSTEM_PROMPT, userPrompt);
+    // Orchestrate briefing - get prioritized categories and context
+    const orchestration = orchestrateBriefing(new Date(), {
+      costBasis: settings.costBasis,
+      logisticsCost: settings.logisticsCost || 80,
+    });
+
+    // Build enhanced user prompt with orchestration context
+    const baseUserPrompt = buildUserPrompt(settings.costBasis, settings.logisticsCost || 80);
+    const enhancedUserPrompt = `${baseUserPrompt}\n\n${orchestration.searchContext}`;
+
+    // Generate briefing with enhanced context
+    const result = await generateBriefing(BRIEFING_SYSTEM_PROMPT, enhancedUserPrompt);
 
     // Get today's date in Brazil timezone
     const today = getTodayBrazil();

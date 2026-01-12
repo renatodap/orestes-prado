@@ -81,6 +81,31 @@ export async function getSettings(): Promise<Settings | null> {
   return row || null;
 }
 
+// Delete briefing by ID
+export async function deleteBriefing(id: number): Promise<boolean> {
+  const result = await db.delete(briefings).where(eq(briefings.id, id));
+  return true;
+}
+
+// Delete all recent briefings (for admin reset)
+export async function deleteRecentBriefings(days: number = 3): Promise<number> {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+
+  // Get briefings to delete
+  const toDelete = await db
+    .select()
+    .from(briefings)
+    .where(sql`${briefings.reportDate} >= ${cutoff.toISOString()}`);
+
+  // Delete them
+  for (const b of toDelete) {
+    await db.delete(briefings).where(eq(briefings.id, b.id));
+  }
+
+  return toDelete.length;
+}
+
 // Save settings (upsert)
 export async function saveSettings(data: Partial<Settings>): Promise<Settings> {
   const existing = await getSettings();

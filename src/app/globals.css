@@ -234,6 +234,23 @@ body {
   .skeleton {
     @apply animate-pulse bg-slate-200 rounded;
   }
+
+  /* Fade in animation for loading phases */
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
 /* Prose styling for markdown content - mobile optimized */
