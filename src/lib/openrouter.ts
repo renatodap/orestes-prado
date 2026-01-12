@@ -6,7 +6,7 @@ const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY!,
 });
 
-// Model: Gemini 3 Pro with web search (1M context, Google Search grounding)
+// Model: Gemini 3 Pro with web search (1M context, Exa search via OpenRouter)
 const MODEL_ID = 'google/gemini-3-pro-preview';
 
 export interface GenerateBriefingOptions {
@@ -31,7 +31,7 @@ export async function generateBriefingStream(
           {
             id: 'web',
             max_results: 10,
-            engine: 'native', // Use Google's native search for Gemini
+            // Omit engine to auto-select: Exa for Gemini (native not supported)
           },
         ],
       },
@@ -57,7 +57,7 @@ export async function generateBriefing(
           {
             id: 'web',
             max_results: 10,
-            engine: 'native', // Use Google's native search for Gemini
+            // Omit engine to auto-select: Exa for Gemini (native not supported)
           },
         ],
       },
