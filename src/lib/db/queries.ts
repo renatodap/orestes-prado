@@ -106,6 +106,17 @@ export async function deleteRecentBriefings(days: number = 3): Promise<number> {
   return toDelete.length;
 }
 
+// Delete ALL briefings (temp admin function)
+export async function deleteAllBriefings(): Promise<number> {
+  const allBriefings = await db.select().from(briefings);
+
+  for (const b of allBriefings) {
+    await db.delete(briefings).where(eq(briefings.id, b.id));
+  }
+
+  return allBriefings.length;
+}
+
 // Save settings (upsert)
 export async function saveSettings(data: Partial<Settings>): Promise<Settings> {
   const existing = await getSettings();
